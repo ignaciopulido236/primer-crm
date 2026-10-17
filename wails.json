@@ -1,0 +1,9 @@
+{
+ "$schema": "https://wails.io/schemas/config.v2.json",
+ "name": "PrimerCRM",
+ "outputfilename": "PrimerCRM",
+ "frontend:dir": "frontend",
+ "frontend:install": "",
+ "frontend:build": "",
+ "author": {"name": "Syntropic Ops"}
+}
