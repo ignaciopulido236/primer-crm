@@ -1,0 +1,27 @@
+const {chromium}=require('playwright');
+(async()=>{
+ const browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:1365,height:900}});
+ await page.addInitScript(()=>{window.calls=[];window.clients=[{id:'demo-1',nombre:'Ana',apellido:'Pérez',email:'ana@example.com',telefono:'+58412',empresa:'Acme',cargo:'Gerente',estado:'cliente',ciudad:'Caracas',responsable:'José'}];window.go={main:{App:{Configuration:async()=>({url:'https://script.google.com/macros/s/demo/exec',configured:true}),Call:async(action,p)=>{window.calls.push({action,p});if(action==='list')return{data:window.clients,meta:{total:window.clients.length}};if(action==='get')return{data:window.clients[0]};if(action==='update'){Object.assign(window.clients[0],p.data);return{ok:true};}if(action==='create'){window.clients.push({id:'demo-2',...p.data});return{ok:true};}if(action==='delete'){window.clients=window.clients.filter(r=>r.id!==p.id);return{ok:true};}},SaveConfiguration:async()=>{}}}};});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(require('node:url').pathToFileURL(require('node:path').join(process.cwd(),'frontend','index.html')).href);
+ await page.getByRole('button',{name:'Abrir ficha de Ana Pérez'}).click();
+ await page.getByLabel('Nombre *',{exact:true}).fill('Andrea');
+ await page.getByRole('button',{name:'Guardar cambios'}).click();
+ await page.getByRole('button',{name:'Abrir ficha de Andrea Pérez'}).waitFor();
+ let updated=await page.evaluate(()=>window.calls.find(c=>c.action==='update'));
+ if(updated.p.data.nombre!=='Andrea'||Object.keys(updated.p.data).length!==13)throw Error('Lost form values');
+ await page.getByRole('button',{name:'＋ Nuevo cliente'}).click();
+ await page.getByLabel('Nombre *',{exact:true}).fill('Carlos');
+ await page.getByRole('button',{name:'Guardar cambios'}).click();
+ await page.getByRole('button',{name:'Abrir ficha de Carlos'}).waitFor();
+ await page.getByLabel('Acciones para Carlos').click();
+ await page.getByRole('button',{name:'Eliminar cliente',exact:true}).first().click();
+ await page.locator('#confirmDelete').click();
+ await page.getByRole('button',{name:'Abrir ficha de Carlos'}).waitFor({state:'detached'});
+ await page.keyboard.press('Control+k');
+ if(await page.locator('#q').evaluate(el=>el!==document.activeElement))throw Error('Search shortcut failed');
+ await page.screenshot({path:'ui-modern.png'});
+ if(errors.length)throw Error(errors.join('\n'));
+ console.log('OK: render, edit all 13 fields, create, delete, Ctrl+K, no JS errors.');
+ await browser.close();
+})().catch(e=>{console.error(e);process.exit(1)});

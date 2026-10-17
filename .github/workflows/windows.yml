@@ -22,6 +22,15 @@ jobs:
         run: go test -v ./...
       - name: Static checks
         run: go vet ./...
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Browser UI checks
+        shell: pwsh
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install chromium
+          node tests/ui.cjs
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.10.2
       - name: Build Windows desktop app
@@ -35,3 +44,4 @@ jobs:
         with:
           name: Go-module-lock
           path: go.sum
+
